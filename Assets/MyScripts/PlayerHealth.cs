@@ -18,11 +18,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private Rigidbody2D rb;
     private Collider2D col;
 
-    [Header("Ground Check")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
-
     [Header("Health UI")]
     public Image healthBar;
     public Text healthText;
@@ -33,13 +28,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public float maxMana = 300f;
     private float currentMana = 0f;
 
-   [Header("Mana Sounds")]
-public AudioClip manaFullSound;
-[Range(0f,1f)] public float manaFullVolume = 0.7f;
+    [Header("Mana Sounds")]
+    public AudioClip manaFullSound;
+    [Range(0f, 1f)] public float manaFullVolume = 0.7f;
 
-public AudioClip manaEmptySound;
-[Range(0f,1f)] public float manaEmptyVolume = 0.7f;
-public AudioSource audioSource;
+    public AudioClip manaEmptySound;
+    [Range(0f, 1f)] public float manaEmptyVolume = 0.7f;
+    public AudioSource audioSource;
 
     private bool isDead = false;
     public bool IsDead => isDead;
@@ -117,21 +112,9 @@ public AudioSource audioSource;
         var combat = GetComponent<PlayerCombat>();
         if (combat != null) combat.enabled = false;
 
-        StartCoroutine(FreezeWhenGrounded());
-    }
-
-    private IEnumerator FreezeWhenGrounded()
-    {
-        while (!IsGrounded())
-            yield return null;
-
+        // No ground check anymore – freeze immediately
         rb.velocity = Vector2.zero;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
-    }
-
-    private bool IsGrounded()
-    {
-        return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
     }
 
     private void UpdateHealthUI()

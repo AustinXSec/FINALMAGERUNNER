@@ -135,7 +135,7 @@ public class Goblin : MonoBehaviour, IDamageable
 
             PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
             if (playerHealth != null)
-                playerHealth.TakeDamage(50, transform);
+                playerHealth.TakeDamage(35, transform);
         }
 
         yield return new WaitForSeconds(0.2f);
@@ -173,7 +173,7 @@ public class Goblin : MonoBehaviour, IDamageable
 
         PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
         if (playerHealth != null)
-            playerHealth.AddMana(20);
+            playerHealth.AddMana(6);
 
         if (currentHealth <= 0)
             Die();

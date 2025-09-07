@@ -15,16 +15,15 @@ public class HeroKnight : MonoBehaviour
 
     [Header("Player Sounds")]
     public AudioSource audioSource;
-    public AudioClip[] hurtSounds; // 3 random hurt sounds
+    public AudioClip[] hurtSounds;
     [Range(0f, 1f)] public float hurtVolume = 0.5f;
-    public AudioClip deathSound; // 1 death sound
+    public AudioClip deathSound;
     [Range(0f, 1f)] public float deathVolume = 1f;
-    public AudioClip jumpSound; // jump sound
+    public AudioClip jumpSound;
     [Range(0f, 1f)] public float jumpVolume = 0.7f;
 
     private Animator m_animator;
     private Rigidbody2D m_body2d;
-    private Sensor_HeroKnight m_groundSensor;
 
     private bool m_grounded = false;
     private bool m_rolling = false;
@@ -35,13 +34,16 @@ public class HeroKnight : MonoBehaviour
     private float jumpStartY;
 
     public int FacingDirection => m_facingDirection;
-    private int originalLayer; // For roll/dodge layer
+    private int originalLayer;
+
+    // Track platform contacts to fix double jump
+    private int groundContacts = 0;
+    private Transform currentPlatform;
 
     void Start()
     {
         m_animator = GetComponent<Animator>();
         m_body2d = GetComponent<Rigidbody2D>();
-        m_groundSensor = transform.Find("GroundSensor").GetComponent<Sensor_HeroKnight>();
         originalLayer = gameObject.layer;
     }
 
@@ -59,32 +61,15 @@ public class HeroKnight : MonoBehaviour
             }
         }
 
-        // Ground detection
-        if (!m_grounded && m_groundSensor.State())
-        {
-            m_grounded = true;
-            m_animator.SetBool("Grounded", true);
-        }
-
-        if (m_grounded && !m_groundSensor.State())
-        {
-            m_grounded = false;
-            m_animator.SetBool("Grounded", false);
-        }
+        // Grounded check
+        m_grounded = IsGrounded();
+        m_animator.SetBool("Grounded", m_grounded);
 
         float inputX = Input.GetAxis("Horizontal");
 
         // Flip sprite
-        if (inputX > 0)
-        {
-            GetComponent<SpriteRenderer>().flipX = false;
-            m_facingDirection = 1;
-        }
-        else if (inputX < 0)
-        {
-            GetComponent<SpriteRenderer>().flipX = true;
-            m_facingDirection = -1;
-        }
+        if (inputX > 0) { GetComponent<SpriteRenderer>().flipX = false; m_facingDirection = 1; }
+        else if (inputX < 0) { GetComponent<SpriteRenderer>().flipX = true; m_facingDirection = -1; }
 
         // Move
         if (!m_rolling)
@@ -93,15 +78,8 @@ public class HeroKnight : MonoBehaviour
         m_animator.SetFloat("AirSpeedY", m_body2d.velocity.y);
 
         // Block
-        if (Input.GetMouseButtonDown(1) && !m_rolling)
-        {
-            m_animator.SetTrigger("Block");
-            m_animator.SetBool("IdleBlock", true);
-        }
-        else if (Input.GetMouseButtonUp(1))
-        {
-            m_animator.SetBool("IdleBlock", false);
-        }
+        if (Input.GetMouseButtonDown(1) && !m_rolling) { m_animator.SetTrigger("Block"); m_animator.SetBool("IdleBlock", true); }
+        else if (Input.GetMouseButtonUp(1)) { m_animator.SetBool("IdleBlock", false); }
 
         // Roll
         if (Input.GetKeyDown(KeyCode.LeftShift) && !m_rolling)
@@ -113,16 +91,14 @@ public class HeroKnight : MonoBehaviour
         }
 
         // Jump
-        if (Input.GetKeyDown("space") && m_grounded && !m_rolling)
+        if (Input.GetKeyDown(KeyCode.Space) && m_grounded && !m_rolling)
         {
             m_animator.SetTrigger("Jump");
             m_grounded = false;
             m_animator.SetBool("Grounded", false);
             m_body2d.velocity = new Vector2(m_body2d.velocity.x, m_jumpForce);
             jumpStartY = transform.position.y;
-            m_groundSensor.Disable(0.2f);
 
-            // Play jump sound
             if (audioSource != null && jumpSound != null)
                 audioSource.PlayOneShot(jumpSound, jumpVolume);
         }
@@ -130,7 +106,7 @@ public class HeroKnight : MonoBehaviour
         // Better jump physics
         if (m_body2d.velocity.y > 0)
         {
-            if (Input.GetKey("space"))
+            if (Input.GetKey(KeyCode.Space))
             {
                 if (transform.position.y - jumpStartY > maxJumpHeight)
                     m_body2d.velocity = new Vector2(m_body2d.velocity.x, 0);
@@ -148,21 +124,41 @@ public class HeroKnight : MonoBehaviour
         // Run / Idle
         if (!m_rolling)
         {
-            if (Mathf.Abs(inputX) > Mathf.Epsilon)
+            if (Mathf.Abs(inputX) > Mathf.Epsilon) { m_delayToIdle = 0.05f; m_animator.SetInteger("AnimState", 1); }
+            else { m_delayToIdle -= Time.deltaTime; if (m_delayToIdle < 0) m_animator.SetInteger("AnimState", 0); }
+        }
+    }
+
+    // Collision-based grounding
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        foreach (var contact in collision.contacts)
+        {
+            if (Vector2.Dot(contact.normal, Vector2.up) > 0.5f)
             {
-                m_delayToIdle = 0.05f;
-                m_animator.SetInteger("AnimState", 1);
-            }
-            else
-            {
-                m_delayToIdle -= Time.deltaTime;
-                if (m_delayToIdle < 0)
-                    m_animator.SetInteger("AnimState", 0);
+                groundContacts++;
+                transform.SetParent(collision.transform);
+                currentPlatform = collision.transform;
+                break;
             }
         }
     }
 
-    // Call these from PlayerHealth or animation events
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.transform == currentPlatform)
+        {
+            groundContacts = Mathf.Max(groundContacts - 1, 0);
+            transform.SetParent(null);
+            currentPlatform = null;
+        }
+    }
+
+    private bool IsGrounded()
+    {
+        return groundContacts > 0;
+    }
+
     public void PlayHurtSound()
     {
         if (audioSource != null && hurtSounds.Length > 0)
@@ -178,8 +174,5 @@ public class HeroKnight : MonoBehaviour
             audioSource.PlayOneShot(deathSound, deathVolume);
     }
 
-    void AE_SlideDust()
-    {
-        // Placeholder for slide dust effect
-    }
+    void AE_SlideDust() { }
 }
