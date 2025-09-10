@@ -34,7 +34,7 @@ public class PlayerCombat : MonoBehaviour
 
     [Header("Mana Glow Particle Trail")]
     public ParticleSystem manaGlowParticles;
-    public Vector3 particleOffset = new Vector3(0,1f,0); // height above player
+    public Vector3 particleOffset = new Vector3(0,1f,0);
 
     private int currentAttack = 0;
     private bool isAttacking = false;
@@ -44,7 +44,6 @@ public class PlayerCombat : MonoBehaviour
     {
         Instance = this;
 
-        // Stop particles at start
         if (manaGlowParticles != null)
             manaGlowParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
@@ -59,7 +58,6 @@ public class PlayerCombat : MonoBehaviour
                 StartCoroutine(PerformAttack());
         }
 
-        // Make particles follow the player as a trail
         if (manaGlowParticles != null && specialActive)
         {
             manaGlowParticles.transform.position = transform.position + particleOffset;
@@ -76,7 +74,6 @@ public class PlayerCombat : MonoBehaviour
 
         animator.SetTrigger("Attack" + currentAttack);
 
-        // Play appropriate attack sound
         if (audioSource != null)
         {
             if (specialActive && specialAttackSound != null)
@@ -104,12 +101,21 @@ public class PlayerCombat : MonoBehaviour
 
     void DealDamage()
     {
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayers);
-        foreach (Collider2D enemyCollider in hitEnemies)
+        Collider2D[] hitObjects = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayers);
+
+        foreach (Collider2D obj in hitObjects)
         {
-            IDamageable damageable = enemyCollider.GetComponent<IDamageable>();
+            // Damage enemies
+            IDamageable damageable = obj.GetComponent<IDamageable>();
             if (damageable != null)
                 damageable.TakeDamage(attackDamage, transform);
+
+            // Deflect spikeballs
+            SpikeBall spikeBall = obj.GetComponent<SpikeBall>();
+            if (spikeBall != null)
+            {
+                spikeBall.Deflect(transform);
+            }
         }
 
         if (specialActive)
@@ -118,16 +124,15 @@ public class PlayerCombat : MonoBehaviour
 
     public void EnableSpecialAttack()
     {
-        if (specialActive) return; // already active
+        if (specialActive) return;
 
         specialActive = true;
 
-        // Play particles
         if (manaGlowParticles != null)
         {
             manaGlowParticles.transform.position = transform.position + particleOffset;
             var main = manaGlowParticles.main;
-            main.simulationSpace = ParticleSystemSimulationSpace.World; // trail effect
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
             manaGlowParticles.Play();
         }
 
@@ -147,7 +152,6 @@ public class PlayerCombat : MonoBehaviour
 
         specialActive = false;
 
-        // Stop particles smoothly
         if (manaGlowParticles != null)
             manaGlowParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
 
@@ -182,7 +186,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    void OnDrawGizmosSelected()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);

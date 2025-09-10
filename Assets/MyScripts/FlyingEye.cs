@@ -28,7 +28,7 @@ public class FlyingEye : MonoBehaviour, IDamageable
     [Header("Knockback")]
     public float knockbackForce = 5f;
     public float knockbackDuration = 0.2f;
-
+ 
     [Header("References")]
     public Transform player;
     public Animator animator;
@@ -172,27 +172,48 @@ public class FlyingEye : MonoBehaviour, IDamageable
         isKnockedBack = false;
     }
 
-    private void Die(Transform attacker = null)
+   private void Die(Transform attacker = null)
+{
+    if (isDead) return;
+
+    isDead = true;
+    animator?.SetBool("isDead", true);
+
+    rb.velocity = Vector2.zero;
+    rb.gravityScale = 1f;
+    rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+    col.isTrigger = true;
+    movement = Vector2.zero;
+
+    // Give mana to player if attacker exists
+    if (attacker != null)
     {
-        if (isDead) return;
-
-        isDead = true;
-        animator?.SetBool("isDead", true);
-
-        rb.velocity = Vector2.zero;
-        rb.gravityScale = 1f;
-        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        col.isTrigger = true;
-        movement = Vector2.zero;
-
-        // Give mana to player if attacker exists
-        if (attacker != null)
-        {
-            PlayerHealth playerHealth = attacker.GetComponent<PlayerHealth>();
-            if (playerHealth != null)
-                playerHealth.AddMana(manaReward);
-        }
+        PlayerHealth playerHealth = attacker.GetComponent<PlayerHealth>();
+        if (playerHealth != null)
+            playerHealth.AddMana(manaReward);
     }
+
+    // Destroy after death animation
+    StartCoroutine(HandleDeath());
+}
+
+private IEnumerator HandleDeath()
+{
+    float deathAnimLength = 1f;
+
+    if (animator != null)
+    {
+        AnimatorClipInfo[] clipInfo = animator.GetCurrentAnimatorClipInfo(0);
+        if (clipInfo.Length > 0)
+            deathAnimLength = clipInfo[0].clip.length;
+    }
+
+    // wait for anim + a little buffer
+    yield return new WaitForSeconds(deathAnimLength + 1f);
+
+    Destroy(gameObject);
+}
+
 
     void OnDrawGizmosSelected()
     {

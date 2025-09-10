@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerHealth : MonoBehaviour, IDamageable
@@ -34,6 +35,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public AudioClip manaEmptySound;
     [Range(0f, 1f)] public float manaEmptyVolume = 0.7f;
+
     public AudioSource audioSource;
 
     private bool isDead = false;
@@ -60,6 +62,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         // Play hurt sound
         GetComponent<HeroKnight>()?.PlayHurtSound();
 
+        // Apply knockback
         if (attacker != null)
         {
             Vector2 knockbackDirection = (transform.position - attacker.position).normalized;
@@ -97,24 +100,30 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (isDead) return;
         isDead = true;
 
+        // Play death animation & sound
         animator?.SetTrigger("Death");
-
-        // Play death sound
         GetComponent<HeroKnight>()?.PlayDeathSound();
 
-        rb.velocity = new Vector2(0, rb.velocity.y);
-        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        // Freeze movement
+        rb.velocity = Vector2.zero;
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
 
-        // Disable other player scripts
+        // Disable player scripts
         var hero = GetComponent<HeroKnight>();
         if (hero != null) hero.enabled = false;
 
         var combat = GetComponent<PlayerCombat>();
         if (combat != null) combat.enabled = false;
 
-        // No ground check anymore – freeze immediately
-        rb.velocity = Vector2.zero;
-        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        // Start scene reload after delay (so animation/sound plays)
+        StartCoroutine(ReloadSceneAfterDelay(7f));
+    }
+
+    private IEnumerator ReloadSceneAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Time.timeScale = 1f; // ensure time scale is normal
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     private void UpdateHealthUI()
@@ -140,7 +149,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (currentMana >= maxMana)
         {
             if (audioSource != null && manaFullSound != null)
-                audioSource.PlayOneShot(manaFullSound);
+                audioSource.PlayOneShot(manaFullSound, manaFullVolume);
 
             PlayerCombat.Instance?.EnableSpecialAttack();
         }
@@ -152,7 +161,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         UpdateManaUI();
 
         if (audioSource != null && manaEmptySound != null)
-            audioSource.PlayOneShot(manaEmptySound);
+            audioSource.PlayOneShot(manaEmptySound, manaEmptyVolume);
     }
 
     private void UpdateManaUI()

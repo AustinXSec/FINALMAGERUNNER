@@ -162,7 +162,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 844478081a854e64fadf0f7c744d416b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  healAmount: 25
+  healAmount: 45
   pickupSfx: {fileID: 8300000, guid: 41b646b67dad3664bb70c48c999b4917, type: 3}
   sfxVolume: 1
 --- !u!95 &-688197793625480288

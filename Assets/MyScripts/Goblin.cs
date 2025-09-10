@@ -14,10 +14,10 @@ public class Goblin : MonoBehaviour, IDamageable
     public float knockbackDuration = 0.2f;
 
     [Header("Jumping/Detection Points")]
-    public Transform groundCheckPoint;   // child object slightly ahead/below
-    public Transform obstacleCheckPoint; // child object slightly in front
-    public float checkRadius = 0.1f;     // radius for overlap detection
-    public LayerMask groundLayer;        // assign your platforms/tilemap
+    public Transform groundCheckPoint;   // slightly below/forward
+    public Transform obstacleCheckPoint; // slightly in front
+    public float checkRadius = 0.1f;     
+    public LayerMask groundLayer;
     public float jumpForce = 8f;
 
     [Header("Detection")]
@@ -32,6 +32,9 @@ public class Goblin : MonoBehaviour, IDamageable
     private bool facingRight = true;
     private bool isDashing = false;
 
+    [Header("Flip Settings")]
+    public float flipDeadzone = 0.1f; // prevent rapid flips
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -39,6 +42,11 @@ public class Goblin : MonoBehaviour, IDamageable
 
         if (player == null)
             player = GameObject.FindGameObjectWithTag("Player")?.transform;
+
+        if (groundCheckPoint == null)
+            Debug.LogWarning("GroundCheckPoint not assigned!");
+        if (obstacleCheckPoint == null)
+            Debug.LogWarning("ObstacleCheckPoint not assigned!");
     }
 
     void Update()
@@ -55,6 +63,7 @@ public class Goblin : MonoBehaviour, IDamageable
             }
             else
             {
+                // Stop horizontal movement but allow gravity to work
                 rb.velocity = new Vector2(0, rb.velocity.y);
                 if (animator != null)
                     animator.SetInteger("AnimState", 0); 
@@ -64,7 +73,8 @@ public class Goblin : MonoBehaviour, IDamageable
         }
         else
         {
-            rb.velocity = Vector2.zero;
+            // Player out of range: stop horizontal motion, keep falling
+            rb.velocity = new Vector2(0, rb.velocity.y);
             if (animator != null)
                 animator.SetInteger("AnimState", 0);
         }
@@ -82,6 +92,7 @@ public class Goblin : MonoBehaviour, IDamageable
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         }
 
+        // Horizontal chase
         rb.velocity = new Vector2(Mathf.Sign(directionX) * chaseSpeed, rb.velocity.y);
 
         if (animator != null)
@@ -91,22 +102,35 @@ public class Goblin : MonoBehaviour, IDamageable
     bool IsGroundAhead()
     {
         if (groundCheckPoint == null) return false;
-        Collider2D hit = Physics2D.OverlapCircle(groundCheckPoint.position, checkRadius, groundLayer);
-        return hit != null;
+        return Physics2D.OverlapCircle(groundCheckPoint.position, checkRadius, groundLayer) != null;
     }
 
     bool IsObstacleAhead()
     {
         if (obstacleCheckPoint == null) return false;
-        Collider2D hit = Physics2D.OverlapCircle(obstacleCheckPoint.position, checkRadius, groundLayer);
-        return hit != null;
+        return Physics2D.OverlapCircle(obstacleCheckPoint.position, checkRadius, groundLayer) != null;
     }
 
     bool IsGrounded()
     {
         if (groundCheckPoint == null) return false;
-        Collider2D hit = Physics2D.OverlapCircle(groundCheckPoint.position, checkRadius, groundLayer);
-        return hit != null;
+        return Physics2D.OverlapCircle(groundCheckPoint.position, checkRadius, groundLayer) != null;
+    }
+
+    void FlipTowardsPlayer()
+    {
+        if (player == null) return;
+
+        float diffX = player.position.x - transform.position.x;
+
+        if (diffX > flipDeadzone && !facingRight)
+            facingRight = true;
+        else if (diffX < -flipDeadzone && facingRight)
+            facingRight = false;
+
+        Vector3 scale = transform.localScale;
+        scale.x = facingRight ? Mathf.Abs(scale.x) : -Mathf.Abs(scale.x);
+        transform.localScale = scale;
     }
 
     IEnumerator PrepareAndDash()
@@ -120,7 +144,7 @@ public class Goblin : MonoBehaviour, IDamageable
 
     IEnumerator DashAttack()
     {
-        rb.velocity = Vector2.zero;
+        rb.velocity = new Vector2(0, rb.velocity.y);
 
         string attackTrigger = Random.value < 0.5f ? "Attack1" : "Attack2";
         if (animator != null)
@@ -140,21 +164,6 @@ public class Goblin : MonoBehaviour, IDamageable
 
         yield return new WaitForSeconds(0.2f);
         isDashing = false;
-    }
-
-    void FlipTowardsPlayer()
-    {
-        if (player == null) return;
-
-        if ((player.position.x > transform.position.x && !facingRight) ||
-            (player.position.x < transform.position.x && facingRight))
-        {
-            facingRight = !facingRight;
-        }
-
-        Vector3 scale = transform.localScale;
-        scale.x = facingRight ? Mathf.Abs(scale.x) : -Mathf.Abs(scale.x);
-        transform.localScale = scale;
     }
 
     public void TakeDamage(int damage, Transform attacker = null)
@@ -228,7 +237,6 @@ public class Goblin : MonoBehaviour, IDamageable
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, dashAttackRange);
 
-        // Draw detection points for child objects
         if (groundCheckPoint != null)
         {
             Gizmos.color = Color.red;

@@ -100,6 +100,7 @@ public class Enemy : MonoBehaviour, IDamageable
     IEnumerator ApplyKnockback(Vector2 direction)
     {
         direction.y = 0f;
+        
         direction.Normalize();
 
         float timer = 0f;

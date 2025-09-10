@@ -6,6 +6,9 @@ TagManager:
   tags:
   - ManaSprite
   - HealthSprite
+  - MovingPlatform
+  - Enemy
+  - Ground
   layers:
   - Default
   - TransparentFX
@@ -20,10 +23,10 @@ TagManager:
   - Player
   - Slash
   - Goblin
-  - 
-  - 
-  - 
-  - 
+  - Skeleton
+  - Spikeball
+  - Scorpion
+  - Snake
   - 
   - 
   - 
