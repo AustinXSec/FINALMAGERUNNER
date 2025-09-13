@@ -1,13 +1,21 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using EasyTransition; // namespace from your asset
 
 public class LevelManager2 : MonoBehaviour
 {
     [Header("Next Scene Name")]
-    public string nextSceneName; // Set this to your Level 3 scene
+    public string nextSceneName; // e.g., Level 3
+
+    [Header("Optional Transition")]
+    public TransitionSettings myTransition; // assign in inspector
+
+    private bool sceneLoading = false; // prevent multiple loads
 
     void Update()
     {
+        if (sceneLoading) return;
+
         // Find all enemies currently in the scene
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
 
@@ -20,10 +28,33 @@ public class LevelManager2 : MonoBehaviour
 
     private void LoadNextScene()
     {
-        // Optional: disable this script to prevent multiple calls
-        enabled = false;
+        sceneLoading = true; // prevent multiple calls
 
-        // Load the next scene
-        SceneManager.LoadScene(nextSceneName);
+        // Try to get TransitionManager instance
+        TransitionManager manager = null;
+        try
+        {
+            manager = TransitionManager.Instance();
+        }
+        catch
+        {
+            // Ignore if not ready
+        }
+
+        if (manager != null && myTransition != null)
+        {
+            // Use transition to load next scene
+            manager.Transition(nextSceneName, myTransition, 0f);
+        }
+        else
+        {
+            // Fallback to instant load
+            if (manager == null)
+                Debug.LogWarning("TransitionManager not found. Loading scene instantly.");
+            else
+                Debug.LogWarning("TransitionSettings not assigned. Loading scene instantly.");
+
+            SceneManager.LoadScene(nextSceneName);
+        }
     }
 }

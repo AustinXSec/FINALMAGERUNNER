@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using Cinemachine; // make sure this is at the top
 
-
 [RequireComponent(typeof(Rigidbody2D))]
 public class Snake : MonoBehaviour, IDamageable
 {
@@ -28,13 +27,17 @@ public class Snake : MonoBehaviour, IDamageable
     private bool hasWoken = false;    // has cutscene finished?
     private bool wakingUp = false;   // waiting delay
 
+    [Header("Boss Music (optional)")]
+    public AudioClip bossMusicClip;
+    public float musicFadeSeconds = 1.5f;
+
+
+
     [Header("Camera Shake")]
     public CinemachineImpulseSource impulseSource;
 
     [Header("Audio")]
-public AudioSource audioSource; // drag the AudioSource component here in the Inspector
-
-
+    public AudioSource audioSource;
 
     [Header("Attack")]
     public float biteRange = 1.5f;
@@ -50,11 +53,18 @@ public AudioSource audioSource; // drag the AudioSource component here in the In
     [Header("Flip Settings")]
     public float flipDeadzone = 0.1f;
 
+    public delegate void SnakeWakeUpAction();
+    public event SnakeWakeUpAction OnSnakeWakeUp;
+
     // Optional burst dash
     public bool enableBurst = true;
     private bool isBursting = false;
     private float burstCooldown = 3f;
     private float burstTimer = 0f;
+
+    // NEW: control being lifted by ally
+    private float liftCooldown = 0.6f;
+    private float liftTimer = 0f;
 
     void Start()
     {
@@ -79,6 +89,8 @@ public AudioSource audioSource; // drag the AudioSource component here in the In
             return; // block AI until woken
         }
 
+        if (liftTimer > 0f) liftTimer -= Time.deltaTime;
+
         // --- NORMAL AI LOGIC ---
         if (!isAttacking && !isBursting)
             MoveTowardsPlayer();
@@ -91,11 +103,13 @@ public AudioSource audioSource; // drag the AudioSource component here in the In
             StartCoroutine(BiteAttack());
         }
 
-        // Leap if player is above
+        // ORIGINAL snake auto-leap removed from autonomous decision (leave LeapToPlatform method available)
+        /*
         if (!isAttacking && !isBursting && player.position.y > transform.position.y + 1f && IsGrounded())
         {
             StartCoroutine(LeapToPlatform());
         }
+        */
 
         // Optional burst
         if (enableBurst && !isAttacking && !isBursting)
@@ -121,28 +135,38 @@ public AudioSource audioSource; // drag the AudioSource component here in the In
             StartCoroutine(WakeUpSequence());
         }
     }
-IEnumerator WakeUpSequence()
-{
-    wakingUp = true;
 
-    if (animator != null)
-        animator.SetTrigger("WakeUp"); // optional animation
-
-    yield return new WaitForSeconds(wakeDelay);
-
-    // --- Play the AudioSource directly ---
-    if (audioSource != null)
+    IEnumerator WakeUpSequence()
     {
-        audioSource.Play(); // plays the clip assigned on the AudioSource component
-    }
+        wakingUp = true;
 
-    // --- Trigger camera shake ---
-    if (impulseSource != null)
-        impulseSource.GenerateImpulse();
+        if (animator != null)
+            animator.SetTrigger("WakeUp"); // optional animation
 
-    hasWoken = true;   // snake is now active forever
-    wakingUp = false;
+        yield return new WaitForSeconds(wakeDelay);
+
+        // --- Play the AudioSource directly ---
+        if (audioSource != null)
+        {
+            audioSource.Play(); // plays the clip assigned on the AudioSource component
+        }
+
+        // --- Trigger camera shake ---
+        if (impulseSource != null)
+            impulseSource.GenerateImpulse();
+
+        hasWoken = true;   // snake is now active forever
+        // Example inside Snake.WakeUpSequence(), after hasWoken = true;
+if (MusicManager.Instance != null && bossMusicClip != null)
+{
+    MusicManager.Instance.CrossfadeTo(bossMusicClip, 1.5f, true); // fade to boss music over 1.5s and loop
 }
+
+        wakingUp = false;
+
+        OnSnakeWakeUp?.Invoke();
+        
+    }
 
     void MoveTowardsPlayer()
     {
@@ -234,7 +258,7 @@ IEnumerator WakeUpSequence()
         transform.localScale = scale;
     }
 
-    bool IsGrounded()
+    public bool IsGrounded()
     {
         return Physics2D.OverlapCircle(groundCheckPoint.position, checkRadius, groundLayer) != null;
     }
@@ -301,6 +325,42 @@ IEnumerator WakeUpSequence()
         yield return new WaitForSeconds(3f);
         Destroy(gameObject);
     }
+
+public void ReceiveLift(Vector2 liftVelocity)
+{
+    // Only allow lift when grounded and not attacking/dead
+    if (isDead || isAttacking) return;
+    if (!IsGrounded()) return;
+    if (liftTimer > 0f) return;
+
+    StartCoroutine(HandleReceivedLift(liftVelocity));
+}
+
+private IEnumerator HandleReceivedLift(Vector2 liftVelocity)
+{
+    isAttacking = true; // prevent other actions during lift
+    if (animator != null)
+        animator.SetTrigger("Leap"); // play leap animation
+
+    // short wind-up
+    yield return new WaitForSeconds(0.2f);
+
+    // Increase vertical velocity for stronger first jump
+    float strongJumpY = liftVelocity.y * 1.2f; // 50% higher than original
+    rb.velocity = new Vector2(liftVelocity.x, strongJumpY);
+
+    // Wait a small fraction before applying second vertical boost
+    yield return new WaitForSeconds(0.15f);
+
+    // Apply **second jump** with increased force
+    rb.velocity = new Vector2(rb.velocity.x, strongJumpY);
+
+    // wait before resuming normal AI
+    yield return new WaitForSeconds(0.4f);
+
+    isAttacking = false;
+    liftTimer = liftCooldown;
+}
 
     private void OnDrawGizmosSelected()
     {

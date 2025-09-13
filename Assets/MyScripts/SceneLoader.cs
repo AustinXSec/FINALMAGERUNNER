@@ -1,13 +1,18 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using EasyTransition;  
 
 public class SceneLoader : MonoBehaviour
 {
-    /// <summary>
-    /// Loads a scene by name.
-    /// </summary>
+    public TransitionSettings myTransition; // assign in inspector
+
     public void LoadLevel(string levelName)
     {
-        SceneManager.LoadScene(levelName);
+        if (myTransition == null)
+        {
+            Debug.LogError("No transition assigned!");
+            return;
+        }
+
+        TransitionManager.Instance().Transition(levelName, myTransition, 0f);
     }
 }
