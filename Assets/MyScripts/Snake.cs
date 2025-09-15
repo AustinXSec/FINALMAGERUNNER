@@ -49,6 +49,7 @@ public class Snake : MonoBehaviour, IDamageable
     private Rigidbody2D rb;
     private bool isDead = false;
     private bool isAttacking = false;
+    public bool IsDead => isDead;
 
     [Header("Flip Settings")]
     public float flipDeadzone = 0.1f;

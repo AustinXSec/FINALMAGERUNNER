@@ -57,6 +57,7 @@ public class Hellhound : MonoBehaviour, IDamageable
     private float burstCooldown = 3f;
     private float burstTimer = 0f;
     private bool isDead = false;
+    public bool IsDead => isDead;
 
     void Start()
     {
