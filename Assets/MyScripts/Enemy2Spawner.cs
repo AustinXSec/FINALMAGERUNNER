@@ -11,8 +11,10 @@ public class Enemy2pawner : MonoBehaviour
     public int maxEnemiesAlive = 10;
     public int enemiesPerSpawn = 1;
 
+    [HideInInspector]
+    public List<GameObject> spawnedEnemies = new List<GameObject>(); // make public for BossFightManager access
+
     private bool canSpawn = false;
-    private List<GameObject> spawnedEnemies = new List<GameObject>();
 
     void Start()
     {

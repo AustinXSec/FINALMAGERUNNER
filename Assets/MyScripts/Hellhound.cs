@@ -59,6 +59,8 @@ public class Hellhound : MonoBehaviour, IDamageable
     private bool isDead = false;
     public bool IsDead => isDead;
 
+    
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();

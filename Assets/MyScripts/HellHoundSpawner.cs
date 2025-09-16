@@ -9,7 +9,7 @@ public class HellhoundSpawner : MonoBehaviour
     public float spawnDelay = 15f;       // Delay after Snake wakes up
     public AudioClip spawnSound;         // Sound to play when Hellhound spawns
     public AudioSource audioSource;      // AudioSource to play the sound
-
+    public event System.Action<Hellhound> OnHellhoundSpawned;
     private bool hasSpawned = false;
 
     void Start()
@@ -39,19 +39,23 @@ public class HellhoundSpawner : MonoBehaviour
         StartCoroutine(SpawnHellhoundAfterDelay());
     }
 
-    IEnumerator SpawnHellhoundAfterDelay()
+IEnumerator SpawnHellhoundAfterDelay()
+{
+    yield return new WaitForSeconds(spawnDelay);
+
+    if (!hasSpawned)
     {
-        yield return new WaitForSeconds(spawnDelay);
+        GameObject obj = Instantiate(hellhoundPrefab, spawnPoint.position, Quaternion.identity);
+        Hellhound h = obj.GetComponent<Hellhound>();
 
-        if (!hasSpawned)
-        {
-            Instantiate(hellhoundPrefab, spawnPoint.position, Quaternion.identity);
+        if (h != null)
+            OnHellhoundSpawned?.Invoke(h);
 
-            // Play spawn sound
-            if (spawnSound != null && audioSource != null)
-                audioSource.PlayOneShot(spawnSound);
+        if (spawnSound != null && audioSource != null)
+            audioSource.PlayOneShot(spawnSound);
 
-            hasSpawned = true;
-        }
+        hasSpawned = true;
     }
 }
+    }
+

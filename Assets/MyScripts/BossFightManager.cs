@@ -5,6 +5,11 @@ using System.Collections;
 
 public class BossFightManager : MonoBehaviour
 {
+    [Header("Boss References")]
+    public Snake snake;                        // Assign Snake from scene
+    public HellhoundSpawner hellhoundSpawner;   // Assign HellhoundSpawner from scene
+    private Hellhound hellhoundInstance;       // Track spawned Hellhound
+
     [Header("Next Scene Name")]
     public string nextSceneName;
 
@@ -20,15 +25,31 @@ public class BossFightManager : MonoBehaviour
     private bool sceneLoading = false;
     private bool spawnersDisabled = false;
 
+    void Start()
+    {
+        if (snake != null)
+            snake.OnSnakeWakeUp += OnSnakeWokeUp;
+
+        if (hellhoundSpawner != null)
+            hellhoundSpawner.OnHellhoundSpawned += OnHellhoundSpawned;
+    }
+
+    void OnSnakeWokeUp()
+    {
+        // Optional: additional logic when Snake wakes
+    }
+
+    void OnHellhoundSpawned(Hellhound h)
+    {
+        hellhoundInstance = h;
+    }
+
     void Update()
     {
         if (sceneLoading) return;
 
-        Snake snake = FindObjectOfType<Snake>();
-        Hellhound hellhound = FindObjectOfType<Hellhound>();
-
-        bool snakeDead = (snake == null || snake.IsDead);
-        bool hellhoundDead = (hellhound == null || hellhound.IsDead);
+        bool snakeDead = snake == null || snake.IsDead;
+        bool hellhoundDead = hellhoundInstance == null || hellhoundInstance.IsDead;
 
         if (snakeDead && hellhoundDead)
         {
@@ -36,7 +57,7 @@ public class BossFightManager : MonoBehaviour
             if (MusicManager.Instance != null)
                 MusicManager.Instance.FadeOut(musicFadeSeconds);
 
-            // Disable all enemy spawners only once
+            // Disable all enemy spawners and destroy all spawned enemies only once
             if (!spawnersDisabled)
             {
                 DisableAllSpawners();
@@ -55,14 +76,24 @@ public class BossFightManager : MonoBehaviour
     private void DisableAllSpawners()
     {
         Enemy2pawner[] spawners = FindObjectsOfType<Enemy2pawner>();
+
         foreach (Enemy2pawner spawner in spawners)
         {
-            spawner.enabled = false;        // stop Update
-            spawner.StopAllCoroutines();    // stop spawning loop
-            spawner.gameObject.SetActive(false); // hide spawner if you want
+            // Destroy all currently spawned enemies
+            foreach (GameObject enemy in spawner.spawnedEnemies)
+            {
+                if (enemy != null)
+                    Destroy(enemy);
+            }
+            spawner.spawnedEnemies.Clear();
+
+            // Stop spawning loop and hide the spawner
+            spawner.StopAllCoroutines();
+            spawner.enabled = false;
+            spawner.gameObject.SetActive(false);
         }
 
-        Debug.Log($"Disabled {spawners.Length} enemy spawners.");
+        Debug.Log($"Disabled {spawners.Length} enemy spawners and destroyed all spawned enemies.");
     }
 
     private IEnumerator DelayedSceneLoad()

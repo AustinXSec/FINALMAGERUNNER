@@ -152,7 +152,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 600
   chaseSpeed: 4
-  knockbackForce: 3
+  knockbackForce: 7
   knockbackDuration: 0.2
   groundCheckPoint: {fileID: 8627083037334063978}
   obstacleCheckPoint: {fileID: 5009652424448973975}
@@ -165,6 +165,7 @@ MonoBehaviour:
   dashAttackRange: 1.7
   player: {fileID: 0}
   animator: {fileID: 2968018742634103207}
+  flipDeadzone: 0.1
 --- !u!70 &7199128864902835616
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
