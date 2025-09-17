@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "2DGAME.sln"
+    "dotnet.defaultSolution": "FINALMAGERUNNER.sln"
 }

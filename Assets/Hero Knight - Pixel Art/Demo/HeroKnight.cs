@@ -29,18 +29,16 @@ public class HeroKnight : MonoBehaviour
 
     [Header("Player Health")]
     public int maxHealth = 3;
-    private int currentHealth;
 
+    private int currentHealth;
     private Animator m_animator;
     private Rigidbody2D m_body2d;
-
     private bool m_grounded = false;
     private bool m_rolling = false;
     public int m_facingDirection = 1;
     private float m_delayToIdle = 0.0f;
     private float m_rollDuration = 8.0f / 14.0f;
     private float m_rollCurrentTime;
-
     private int originalLayer;
 
     public int FacingDirection => m_facingDirection;
@@ -85,8 +83,16 @@ public class HeroKnight : MonoBehaviour
         float inputX = Input.GetAxis("Horizontal");
 
         // Flip sprite
-        if (inputX > 0) { GetComponent<SpriteRenderer>().flipX = false; m_facingDirection = 1; }
-        else if (inputX < 0) { GetComponent<SpriteRenderer>().flipX = true; m_facingDirection = -1; }
+        if (inputX > 0)
+        {
+            GetComponent<SpriteRenderer>().flipX = false;
+            m_facingDirection = 1;
+        }
+        else if (inputX < 0)
+        {
+            GetComponent<SpriteRenderer>().flipX = true;
+            m_facingDirection = -1;
+        }
 
         // Move
         if (!m_rolling)
@@ -123,6 +129,7 @@ public class HeroKnight : MonoBehaviour
         {
             m_rollCurrentTime += Time.deltaTime;
             m_body2d.velocity = new Vector2(m_facingDirection * m_rollForce, m_body2d.velocity.y);
+
             if (m_rollCurrentTime > m_rollDuration)
             {
                 m_rolling = false;
@@ -149,6 +156,7 @@ public class HeroKnight : MonoBehaviour
         if (!m_rolling)
         {
             float inputX = Input.GetAxis("Horizontal");
+
             if (Mathf.Abs(inputX) > Mathf.Epsilon)
             {
                 m_delayToIdle = 0.05f;
@@ -157,7 +165,8 @@ public class HeroKnight : MonoBehaviour
             else
             {
                 m_delayToIdle -= Time.deltaTime;
-                if (m_delayToIdle < 0) m_animator.SetInteger("AnimState", 0); // idle
+                if (m_delayToIdle < 0)
+                    m_animator.SetInteger("AnimState", 0); // idle
             }
         }
     }

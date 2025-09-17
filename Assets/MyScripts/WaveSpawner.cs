@@ -66,7 +66,7 @@ public class WaveSpawner : MonoBehaviour
         yield return new WaitForSeconds(2f);
         if (sceneLoader != null)
         {
-            sceneLoader.LoadLevel("Level_2"); // change "Level2" to your next scene’s name
+            sceneLoader.LoadLevel("NPC"); // change "Level2" to your next scene’s name
         }
     }
 
