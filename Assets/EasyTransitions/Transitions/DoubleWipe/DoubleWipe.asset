@@ -19,11 +19,11 @@ MonoBehaviour:
   colorTintMode: 0
   colorTint: {r: 1, g: 1, b: 1, a: 1}
   isCutoutTransition: 0
-  transitionSpeed: 1.5
+  transitionSpeed: 0.68
   autoAdjustTransitionTime: 1
   flipX: 0
   flipY: 0
-  transitionTime: 0.75
+  transitionTime: 2
   destroyTime: 0.75
   transitionIn: {fileID: 1844440750038884793, guid: ec9329cc0794b7b4ba342094dbe2e150, type: 3}
   transitionOut: {fileID: 214316858439596270, guid: 9d1683652e748654694b465b9128c43e, type: 3}

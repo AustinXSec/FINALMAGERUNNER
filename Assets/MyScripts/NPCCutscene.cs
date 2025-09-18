@@ -17,7 +17,8 @@ public class NPCCutscene : MonoBehaviour
     private bool cutsceneTriggered = false;
     private bool isTrackingPlayer = false;
 
-    private void OnTriggerEnter2D(Collider2D other)
+    // Use OnTriggerStay2D instead of OnTriggerEnter2D
+    private void OnTriggerStay2D(Collider2D other)
     {
         if (!cutsceneTriggered && other.CompareTag("Player"))
         {
@@ -26,57 +27,77 @@ public class NPCCutscene : MonoBehaviour
         }
     }
 
-    private IEnumerator StartCutscene()
+private IEnumerator StartCutscene()
+{
+    // ----- STOP PLAYER INPUT -----
+    if (playerController != null)
+        playerController.enabled = false;
+
+    Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+    if (playerRb != null)
     {
-        // Disable player control
-        if (playerController != null)
-            playerController.enabled = false;
+        // Stop horizontal movement only
+        playerRb.velocity = new Vector2(0f, playerRb.velocity.y);
+        // Do NOT set isKinematic = true, keep gravity so player falls
+    }
 
-        // NPC runs toward player
-        npcAnimator.SetBool("isRunning", true);
+    // ----- FORCE PLAYER TO IDLE ANIMATION -----
+    Animator playerAnimator = player.GetComponent<Animator>();
+    if (playerAnimator != null)
+    {
+        playerAnimator.SetInteger("AnimState", 0); // idle
+        playerAnimator.ResetTrigger("Jump");
+        playerAnimator.ResetTrigger("Roll");
+        playerAnimator.SetBool("IdleBlock", false);
+        // Do NOT set Grounded = true here, let gravity do its job
+    }
 
-        while (Vector2.Distance(npc.transform.position, player.position) > stopDistance)
-        {
-            Vector2 target = new Vector2(player.position.x, npc.transform.position.y);
+    // ----- NPC RUNS TO PLAYER -----
+    npcAnimator.SetBool("isRunning", true);
 
-            // Flip NPC to face the player
-            FlipTowardsPlayer();
+    while (Vector2.Distance(npc.transform.position, player.position) > stopDistance)
+    {
+        Vector2 target = new Vector2(player.position.x, npc.transform.position.y);
 
-            // Move towards player
-            npc.transform.position = Vector2.MoveTowards(
-                npc.transform.position,
-                target,
-                npcSpeed * Time.deltaTime
-            );
-
-            yield return null;
-        }
-
-        // Stop NPC
-        npcAnimator.SetBool("isRunning", false);
-        npcAnimator.SetTrigger("Idle");
-
-        // Final face direction
         FlipTowardsPlayer();
 
-        // Play dialogue / voice audio
-        if (dialogueAudio != null)
-        {
-            dialogueAudio.Play();
-            yield return new WaitForSeconds(dialogueAudio.clip.length);
-        }
-        else
-        {
-            yield return new WaitForSeconds(20f); // fallback time
-        }
+        npc.transform.position = Vector2.MoveTowards(
+            npc.transform.position,
+            target,
+            npcSpeed * Time.deltaTime
+        );
 
-        // Re-enable player movement
-        if (playerController != null)
-            playerController.enabled = true;
+        // Freeze player's horizontal movement while NPC approaches
+        if (playerRb != null)
+            playerRb.velocity = new Vector2(0f, playerRb.velocity.y);
 
-        // Start continuously tracking player after cutscene
-        isTrackingPlayer = true;
+        yield return null;
     }
+
+    // Stop NPC
+    npcAnimator.SetBool("isRunning", false);
+    npcAnimator.SetTrigger("Idle");
+
+    FlipTowardsPlayer();
+
+    // Play dialogue / voice audio
+    if (dialogueAudio != null)
+    {
+        dialogueAudio.Play();
+        yield return new WaitForSeconds(dialogueAudio.clip.length);
+    }
+    else
+    {
+        yield return new WaitForSeconds(20f); // fallback
+    }
+
+    // Re-enable player
+    if (playerController != null)
+        playerController.enabled = true;
+
+    isTrackingPlayer = true;
+}
+
 
     private void Update()
     {

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using EasyTransition; // namespace from your asset
+using EasyTransition;
+using TMPro;
 
 public class LevelManager2 : MonoBehaviour
 {
@@ -10,27 +11,48 @@ public class LevelManager2 : MonoBehaviour
     [Header("Optional Transition")]
     public TransitionSettings myTransition; // assign in inspector
 
-    private bool sceneLoading = false; // prevent multiple loads
+    [Header("UI")]
+    public TextMeshProUGUI objectiveText; // assign in inspector
+
+    private bool sceneLoading = false; 
+    private int totalEnemies;
+
+    void Start()
+    {
+        // Count total enemies at the start
+        totalEnemies = GameObject.FindGameObjectsWithTag("Enemy").Length;
+        UpdateObjectiveText(totalEnemies);
+    }
 
     void Update()
     {
         if (sceneLoading) return;
 
-        // Find all enemies currently in the scene
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        // Count how many enemies remain
+        int remainingEnemies = GameObject.FindGameObjectsWithTag("Enemy").Length;
 
-        // If no enemies exist, load the next scene
-        if (enemies.Length == 0)
+        UpdateObjectiveText(remainingEnemies);
+
+        // If no enemies remain, load next scene
+        if (remainingEnemies == 0)
         {
             LoadNextScene();
         }
     }
 
+    private void UpdateObjectiveText(int remaining)
+    {
+        if (objectiveText != null)
+        {
+            objectiveText.text =
+                "Defeat all enemies\n" + remaining + " / " + totalEnemies;
+        }
+    }
+
     private void LoadNextScene()
     {
-        sceneLoading = true; // prevent multiple calls
+        sceneLoading = true; 
 
-        // Try to get TransitionManager instance
         TransitionManager manager = null;
         try
         {
@@ -43,12 +65,10 @@ public class LevelManager2 : MonoBehaviour
 
         if (manager != null && myTransition != null)
         {
-            // Use transition to load next scene
             manager.Transition(nextSceneName, myTransition, 0f);
         }
         else
         {
-            // Fallback to instant load
             if (manager == null)
                 Debug.LogWarning("TransitionManager not found. Loading scene instantly.");
             else

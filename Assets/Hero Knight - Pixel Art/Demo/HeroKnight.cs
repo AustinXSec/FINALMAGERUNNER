@@ -40,7 +40,7 @@ public class HeroKnight : MonoBehaviour
     private float m_rollDuration = 8.0f / 14.0f;
     private float m_rollCurrentTime;
     private int originalLayer;
-
+    
     public int FacingDirection => m_facingDirection;
 
     void Start()
