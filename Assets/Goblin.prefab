@@ -164,6 +164,15 @@ MonoBehaviour:
   playerDetectRadius: 8
   dashAttackRange: 1.7
   player: {fileID: 0}
+  potionPrefab: {fileID: 5389459955762057308, guid: 80d71dad21e0439448f0bc06dc21ce92, type: 3}
+  minDrop: 1
+  maxDrop: 1
+  horizontalSpread: 1
+  dropHeight: 1
+  dropChance: 0.5
+  potionGroundLayer:
+    serializedVersion: 2
+    m_Bits: 0
   animator: {fileID: 2968018742634103207}
   flipDeadzone: 0.1
 --- !u!70 &7199128864902835616

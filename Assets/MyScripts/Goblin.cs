@@ -25,6 +25,16 @@ public class Goblin : MonoBehaviour, IDamageable
     public float dashAttackRange = 1f;
     public Transform player;
 
+    [Header("Potion Drop")]
+    public GameObject potionPrefab;         // Assign potion prefab
+    public int minDrop = 1;                 // Minimum potions
+    public int maxDrop = 3;                 // Maximum potions
+    public float horizontalSpread = 1f;     // Horizontal spread
+    public float dropHeight = 1f;           // Drop height
+    [Range(0f, 1f)]
+    public float dropChance = 0.5f;         // Chance to drop
+    public LayerMask potionGroundLayer;     // Ground layer for potions
+
     [Header("References")]
     public Animator animator;
     private Rigidbody2D rb;
@@ -63,7 +73,6 @@ public class Goblin : MonoBehaviour, IDamageable
             }
             else
             {
-                // Stop horizontal movement but allow gravity to work
                 rb.velocity = new Vector2(0, rb.velocity.y);
                 if (animator != null)
                     animator.SetInteger("AnimState", 0); 
@@ -73,7 +82,6 @@ public class Goblin : MonoBehaviour, IDamageable
         }
         else
         {
-            // Player out of range: stop horizontal motion, keep falling
             rb.velocity = new Vector2(0, rb.velocity.y);
             if (animator != null)
                 animator.SetInteger("AnimState", 0);
@@ -86,13 +94,9 @@ public class Goblin : MonoBehaviour, IDamageable
     {
         float directionX = player.position.x - transform.position.x;
 
-        // Jump if obstacle ahead or no ground ahead
         if ((IsObstacleAhead() || !IsGroundAhead()) && IsGrounded())
-        {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-        }
 
-        // Horizontal chase
         rb.velocity = new Vector2(Mathf.Sign(directionX) * chaseSpeed, rb.velocity.y);
 
         if (animator != null)
@@ -136,9 +140,7 @@ public class Goblin : MonoBehaviour, IDamageable
     IEnumerator PrepareAndDash()
     {
         isDashing = true;
-
-        yield return new WaitForSeconds(0.2f); // prepare delay
-
+        yield return new WaitForSeconds(0.2f);
         yield return StartCoroutine(DashAttack());
     }
 
@@ -156,7 +158,6 @@ public class Goblin : MonoBehaviour, IDamageable
         foreach (Collider2D col in hits)
         {
             if (col.gameObject == this.gameObject) continue;
-
             PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
             if (playerHealth != null)
                 playerHealth.TakeDamage(35, transform);
@@ -210,7 +211,7 @@ public class Goblin : MonoBehaviour, IDamageable
         if (animator != null)
             animator.SetBool("IsDead", true);
 
-        this.enabled = false;
+        StopAllCoroutines();
         StartCoroutine(HandleDeath());
     }
 
@@ -225,8 +226,43 @@ public class Goblin : MonoBehaviour, IDamageable
         }
 
         yield return new WaitForSeconds(deathAnimLength);
+
+        // Drop potions before destroy
+        if (potionPrefab != null && Random.value <= dropChance)
+            DropPotions();
+
         yield return new WaitForSeconds(2f);
         Destroy(gameObject);
+    }
+
+    void DropPotions()
+    {
+        int dropCount = Random.Range(minDrop, maxDrop + 1);
+
+        for (int i = 0; i < dropCount; i++)
+        {
+            Vector3 spawnPos = transform.position + new Vector3(Random.Range(-horizontalSpread, horizontalSpread), dropHeight, 0);
+            GameObject potion = Instantiate(potionPrefab, spawnPos, Quaternion.identity);
+
+            Rigidbody2D rbPotion = potion.GetComponent<Rigidbody2D>();
+            if (rbPotion == null)
+                rbPotion = potion.AddComponent<Rigidbody2D>();
+
+            rbPotion.bodyType = RigidbodyType2D.Dynamic;
+            rbPotion.gravityScale = 1f;
+
+            Collider2D colPotion = potion.GetComponent<Collider2D>();
+            if (colPotion == null)
+            {
+                colPotion = potion.AddComponent<CircleCollider2D>();
+                ((CircleCollider2D)colPotion).radius = 0.2f;
+            }
+
+            rbPotion.AddForce(new Vector2(Random.Range(-1f, 1f), 0), ForceMode2D.Impulse);
+
+            PotionGroundSnap snap = potion.AddComponent<PotionGroundSnap>();
+            snap.groundLayer = potionGroundLayer;
+        }
     }
 
     private void OnDrawGizmosSelected()

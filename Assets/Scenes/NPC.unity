@@ -2206,7 +2206,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8413529789942519730, guid: a4b4a6d32bcb19248a754d6602ffc7e4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -69.92
+      value: 56.1
       objectReference: {fileID: 0}
     - target: {fileID: 8413529789942519730, guid: a4b4a6d32bcb19248a754d6602ffc7e4, type: 3}
       propertyPath: m_LocalPosition.y
@@ -31866,7 +31866,7 @@ Transform:
   m_GameObject: {fileID: 1264599820}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -61.682938, y: 2.40424, z: -10}
+  m_LocalPosition: {x: 56.1, y: 2.4100003, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -33383,7 +33383,7 @@ Transform:
   m_GameObject: {fileID: 1493913706}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -69.92, y: 2.4100003, z: -10}
+  m_LocalPosition: {x: 56.1, y: 2.4100003, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -36288,7 +36288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b6a6a1797d80744db02f25f0a5f6429, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startOffset: 1.2
+  startOffset: 0
 --- !u!82 &2012057181
 AudioSource:
   m_ObjectHideFlags: 0
@@ -36299,10 +36299,10 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 2d0012356562e3d4b87c7f3383d60514, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 035ef9bf7b603fc419f82105a63ca26a, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
-  m_Pitch: 0.94
+  m_Pitch: 1
   Loop: 0
   Mute: 0
   Spatialize: 0
@@ -36439,7 +36439,7 @@ Transform:
   m_GameObject: {fileID: 2012057179}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 62.83, y: -2.49, z: 0.035059515}
+  m_LocalPosition: {x: 70.78, y: -2.49, z: 0.035059515}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
